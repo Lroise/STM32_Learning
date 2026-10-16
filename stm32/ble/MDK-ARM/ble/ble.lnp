@@ -1,0 +1,27 @@
+--cpu Cortex-M3
+"ble\startup_stm32f103xb.o"
+"ble\main.o"
+"ble\gpio.o"
+"ble\dma.o"
+"ble\usart.o"
+"ble\stm32f1xx_it.o"
+"ble\stm32f1xx_hal_msp.o"
+"ble\stm32f1xx_hal_gpio_ex.o"
+"ble\stm32f1xx_hal_tim.o"
+"ble\stm32f1xx_hal_tim_ex.o"
+"ble\stm32f1xx_hal_uart.o"
+"ble\stm32f1xx_hal.o"
+"ble\stm32f1xx_hal_rcc.o"
+"ble\stm32f1xx_hal_rcc_ex.o"
+"ble\stm32f1xx_hal_gpio.o"
+"ble\stm32f1xx_hal_dma.o"
+"ble\stm32f1xx_hal_cortex.o"
+"ble\stm32f1xx_hal_pwr.o"
+"ble\stm32f1xx_hal_flash.o"
+"ble\stm32f1xx_hal_flash_ex.o"
+"ble\stm32f1xx_hal_exti.o"
+"ble\system_stm32f1xx.o"
+--strict --scatter "ble\ble.sct"
+--summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols
+--info sizes --info totals --info unused --info veneers
+--list "ble.map" -o ble\ble.axf

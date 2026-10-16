@@ -1,0 +1,25 @@
+--cpu Cortex-M3
+"mydelay\startup_stm32f103xb.o"
+"mydelay\main.o"
+"mydelay\gpio.o"
+"mydelay\tim.o"
+"mydelay\stm32f1xx_it.o"
+"mydelay\stm32f1xx_hal_msp.o"
+"mydelay\stm32f1xx_hal_gpio_ex.o"
+"mydelay\stm32f1xx_hal_tim.o"
+"mydelay\stm32f1xx_hal_tim_ex.o"
+"mydelay\stm32f1xx_hal.o"
+"mydelay\stm32f1xx_hal_rcc.o"
+"mydelay\stm32f1xx_hal_rcc_ex.o"
+"mydelay\stm32f1xx_hal_gpio.o"
+"mydelay\stm32f1xx_hal_dma.o"
+"mydelay\stm32f1xx_hal_cortex.o"
+"mydelay\stm32f1xx_hal_pwr.o"
+"mydelay\stm32f1xx_hal_flash.o"
+"mydelay\stm32f1xx_hal_flash_ex.o"
+"mydelay\stm32f1xx_hal_exti.o"
+"mydelay\system_stm32f1xx.o"
+--strict --scatter "MyDelay\MyDelay.sct"
+--summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols
+--info sizes --info totals --info unused --info veneers
+--list "MyDelay.map" -o MyDelay\MyDelay.axf

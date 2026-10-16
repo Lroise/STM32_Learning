@@ -1,0 +1,27 @@
+--cpu Cortex-M3
+"pwmmeasurement\startup_stm32f103xb.o"
+"pwmmeasurement\main.o"
+"pwmmeasurement\gpio.o"
+"pwmmeasurement\tim.o"
+"pwmmeasurement\usart.o"
+"pwmmeasurement\stm32f1xx_it.o"
+"pwmmeasurement\stm32f1xx_hal_msp.o"
+"pwmmeasurement\stm32f1xx_hal_gpio_ex.o"
+"pwmmeasurement\stm32f1xx_hal_tim.o"
+"pwmmeasurement\stm32f1xx_hal_tim_ex.o"
+"pwmmeasurement\stm32f1xx_hal.o"
+"pwmmeasurement\stm32f1xx_hal_rcc.o"
+"pwmmeasurement\stm32f1xx_hal_rcc_ex.o"
+"pwmmeasurement\stm32f1xx_hal_gpio.o"
+"pwmmeasurement\stm32f1xx_hal_dma.o"
+"pwmmeasurement\stm32f1xx_hal_cortex.o"
+"pwmmeasurement\stm32f1xx_hal_pwr.o"
+"pwmmeasurement\stm32f1xx_hal_flash.o"
+"pwmmeasurement\stm32f1xx_hal_flash_ex.o"
+"pwmmeasurement\stm32f1xx_hal_exti.o"
+"pwmmeasurement\stm32f1xx_hal_uart.o"
+"pwmmeasurement\system_stm32f1xx.o"
+--strict --scatter "PWMMeasurement\PWMMeasurement.sct"
+--summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols
+--info sizes --info totals --info unused --info veneers
+--list "PWMMeasurement.map" -o PWMMeasurement\PWMMeasurement.axf
