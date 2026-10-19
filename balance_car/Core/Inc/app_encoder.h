@@ -29,4 +29,16 @@ float App_Encoder_GetPos_L(void);
   */
 float App_Encoder_GetPos_R(void);
 
+/**
+  * @brief  获取左轮转速（单位：弧度/秒）
+  * @note   通过两次调用之间的位置差和时间差计算，用于速度环 PID
+  */
+float App_Encoder_GetSpeed_L(void);
+
+/**
+  * @brief  获取右轮转速（单位：弧度/秒）
+  * @note   通过两次调用之间的位置差和时间差计算，用于速度环 PID
+  */
+float App_Encoder_GetSpeed_R(void);
+
 #endif

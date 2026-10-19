@@ -30,6 +30,7 @@
 #include "app_encoder.h"
 #include "encoder_test.h"
 #include "mpu6050_test.h"     // MPU6050 测试
+#include "app_motor.h"        // 电机速度环 PID（新增）
 #include <stdarg.h>
 #include <string.h>
 #include <stdio.h>
@@ -66,6 +67,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
+float targetOmega = 0.0f;   // 目标速度（新增）
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -143,11 +145,14 @@ int main(void)
   /* USER CODE BEGIN 2 */
   App_Button_Init();                            // 按键初始化
   App_PWM_Init();                               // PWM 初始化（电机驱动）
-  TB6612_Enable(1);                             // 使能 TB6612 驱动（电机驱动）
+  // TB6612_Enable(1);                          // 【改动 1】：注释掉！总开关交给按键的 App_Motor_Cmd 去开
   HAL_TIM_Base_Start_IT(&htim4);                // 启动 TIM4 10ms 中断
+  
+  App_Encoder_Init();                           // 启动编码器（新增）
+  App_Motor_Init();                             // 初始化电机速度环 PID（新增）
 
   // Encoder_M_Method_Test();                   // 测速 + 按键 + 电机 + MPU6050（先注释掉）
-  MPU6050_EularAngleTest();                     // 按键 + 电机 + MPU6050
+  // MPU6050_EularAngleTest();                  // 按键 + 电机 + MPU6050（先注释掉）
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -157,6 +162,28 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    // 【改动 2】：加上按键扫描，按下按键才会触发 Key1_Click 开启电机
+    App_Button_Proc();   
+
+    // ======================= 铁头山羊的速度环测试代码（已停用） =======================
+    // 【改动 3】：把自动生成目标速度的代码注释掉，避免上电自动起飞。
+    // targetOmega = (HAL_GetTick() / 1000) % 10 * 2.0f;
+    // App_Motor_SetOmega_L(targetOmega);
+    // App_Motor_SetOmega_R(targetOmega);
+    // ================================================================================
+
+    // 执行速度环 PID 计算（不管转不转，PID 在后台一直算着，等按键一开就立刻生效）
+    App_Motor_Proc();
+
+    // 每 10ms 打印一次数据，供 VOFA+ 观察
+    static uint32_t print_tick = 0;
+    if (HAL_GetTick() - print_tick >= 10)
+    {
+        print_tick = HAL_GetTick();
+        float omega_l = App_Encoder_GetSpeed_L();   // 读左轮实际速度
+        float omega_r = App_Encoder_GetSpeed_R();   // 读右轮实际速度
+        My_USART_Printf(&huart2, "%.3f,%.3f,%.3f\r\n", targetOmega, omega_l, omega_r);
+    }
     /* USER CODE END 3 */
   }
 }

@@ -91,6 +91,5 @@ void App_PWM_Init(void)
 {
     HAL_TIM_PWM_Start(&htim3,TIM_CHANNEL_1);
     HAL_TIM_PWM_Start(&htim3,TIM_CHANNEL_2);
-    TB6612_Enable(1); //TB6612使能开启
 }
 

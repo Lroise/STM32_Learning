@@ -1,5 +1,9 @@
 #include"app_button.h"
 #include"app_pwm.h"
+#include"app_motor.h"    // 包含电机控制头文件
+
+// 声明 main.c 里的全局目标速度变量（新增）
+extern float targetOmega; 
 
 //=====按键配置区，在这改引脚=====
 #define KEY1_PORT GPIOB
@@ -23,16 +27,29 @@ uint8_t motor_run_flag = 0;
 //按键1单击回调，static代表这个函数只允许本文件内部可调用，外部看不见
 static void Key1_Click(void)
 {
-	motor_run_flag = !motor_run_flag;      //取反翻转，0变1，1变0，点一次启动，再点一次停止
-	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-	if(motor_run_flag  == 1)
-	{
-		Motor_SetSpeed(300, 300);  // ✅ 按键控制电机转
-	}
-	else
-	{
-		Motor_SetSpeed(0, 0);      // ✅ 按键控制电机停
-	}
+    motor_run_flag = !motor_run_flag;      //取反翻转，0变1，1变0，点一次启动，再点一次停止
+    HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+    
+    if (motor_run_flag == 1)
+    {
+        // ================= 新增：设定目标速度 =================
+        // 你之前没给目标速度，所以它不知道要跑多快！
+        targetOmega = 10.0f;  // 设定速度为 10.0 弧度/秒
+        
+        App_Motor_SetOmega_L(targetOmega);  // 告诉左轮目标速度
+        App_Motor_SetOmega_R(targetOmega);  // 告诉右轮目标速度
+        
+        // 调用带 PID 复位的电机开关函数，开启总闸
+        App_Motor_Cmd(1);  
+    }
+    else
+    {
+        // 关闭电机
+        App_Motor_Cmd(0);  
+        
+        // ================= 新增：停车时目标速度清零 =================
+        targetOmega = 0.0f;
+    }
 }
 static void Key2_Click(void)
 {
