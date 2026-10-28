@@ -77,20 +77,18 @@ void App_MPU6050_Proc(void)
 
     App_MPU6050_Update();        // 更新传感器的值
 
-    // 通过陀螺仪的测量结果积分算欧拉角（短期准，会漂）
-    float yaw_g   = yaw + gz * 0.005f;
+    // 陀螺仪积分算角度
     float pitch_g = pitch + gx * 0.005f;
     float roll_g  = roll  - gy * 0.005f;
 
-    // 通过加速度计计算欧拉角（长期准，受振动影响）
+    // 加速度计算角度
     float pitch_a = atan2(ay, az) / 3.1415927f * 180.0f;
     float roll_a  = atan2(ax, az) / 3.1415927f * 180.0f;
 
-    // 互补滤波：融合陀螺仪和加速度计
-    // 陀螺仪占 95.238%，加速度计占 4.762%
-    yaw   = yaw_g;
-    pitch = 0.95238f * pitch_g + (1 - 0.95238f) * pitch_a;
-    roll  = 0.95238f * roll_g  + (1 - 0.95238f) * roll_a;
+    // 【修改】加速度计权重从 4.7% 提高到 10%，让角度修正更快
+    pitch = 0.9f * pitch_g + 0.1f * pitch_a;
+    roll  = 0.9f * roll_g  + 0.1f * roll_a;
+    yaw   = yaw + gz * 0.005f;
 }
 
 /**
@@ -98,9 +96,10 @@ void App_MPU6050_Proc(void)
   * @note   读原始数据，转换成物理量，做滑动平均
   *         滑动平均：把最近 FILTER_SIZE 次的数据求平均，减小抖动
   */
+// 打开 app_mpu6050.c，只把下面这个完整的函数替换掉原来的 App_MPU6050_Update 即可
 void App_MPU6050_Update(void)
 {
-    // ---- 读加速度原始数据（高字节 + 低字节）----
+    // ---- 读加速度原始数据 ----
     int16_t ax_raw = (int16_t)((reg_read(0x3B) << 8) + reg_read(0x3C));
     int16_t ay_raw = (int16_t)((reg_read(0x3D) << 8) + reg_read(0x3E));
     int16_t az_raw = (int16_t)((reg_read(0x3F) << 8) + reg_read(0x40));
@@ -114,58 +113,15 @@ void App_MPU6050_Update(void)
     int16_t gy_raw = (int16_t)((reg_read(0x45) << 8) + reg_read(0x46));
     int16_t gz_raw = (int16_t)((reg_read(0x47) << 8) + reg_read(0x48));
 
-    // ---- 转换成物理量 ----
-    // ±2g 量程下，1g = 16384 LSB，所以乘以 1/16384 = 6.1035e-5
-    float ax_new = ax_raw * 6.1035e-5f;
-    float ay_new = ay_raw * 6.1035e-5f;
-    float az_new = az_raw * 6.1035e-5f;
+    // ---- 【修复】直接转换赋值，删掉导致迟钝的滑动平均 ----
+    ax = ax_raw * 6.1035e-5f;
+    ay = ay_raw * 6.1035e-5f;
+    az = az_raw * 6.1035e-5f;
 
-    // ±2000°/s 量程下，1°/s = 16.4 LSB，所以乘以 1/16.4 = 6.1035e-2
-    float gx_new = gx_raw * 6.1035e-2f;
-    float gy_new = gy_raw * 6.1035e-2f;
-    float gz_new = gz_raw * 6.1035e-2f;
-
-    // ---- 滑动平均 ----
-    // 1. 数据整体左移，空出最后一个位置
-    for(int i = 0; i < FILTER_SIZE - 1; i++)
-    {
-        ax_buf[i] = ax_buf[i+1];
-        ay_buf[i] = ay_buf[i+1];
-        az_buf[i] = az_buf[i+1];
-        gx_buf[i] = gx_buf[i+1];
-        gy_buf[i] = gy_buf[i+1];
-        gz_buf[i] = gz_buf[i+1];
-    }
-
-    // 2. 新值放到最后一个位置
-    ax_buf[FILTER_SIZE-1] = ax_new;
-    ay_buf[FILTER_SIZE-1] = ay_new;
-    az_buf[FILTER_SIZE-1] = az_new;
-    gx_buf[FILTER_SIZE-1] = gx_new;
-    gy_buf[FILTER_SIZE-1] = gy_new;
-    gz_buf[FILTER_SIZE-1] = gz_new;
-
-    // 3. 求平均值
-    float ax_sum = 0, ay_sum = 0, az_sum = 0;
-    float gx_sum = 0, gy_sum = 0, gz_sum = 0;
-    for(int i = 0; i < FILTER_SIZE; i++)
-    {
-        ax_sum += ax_buf[i];
-        ay_sum += ay_buf[i];
-        az_sum += az_buf[i];
-        gx_sum += gx_buf[i];
-        gy_sum += gy_buf[i];
-        gz_sum += gz_buf[i];
-    }
-
-    // 4. 赋给全局变量
-    ax = ax_sum / FILTER_SIZE;
-    ay = ay_sum / FILTER_SIZE;
-    az = az_sum / FILTER_SIZE;
-
-    gx = gx_sum / FILTER_SIZE;
-    gy = gy_sum / FILTER_SIZE;
-    gz = gz_sum / FILTER_SIZE;
+    // 【修复】角速度只做轻度的低通滤波（保留 80% 新数据），让 Kd 的刹车信号瞬间传达
+    gx = gx * 0.2f + (gx_raw * 6.1035e-2f) * 0.8f;
+    gy = gy * 0.2f + (gy_raw * 6.1035e-2f) * 0.8f;
+    gz = gz * 0.2f + (gz_raw * 6.1035e-2f) * 0.8f;
 }
 
 // 加速度获取

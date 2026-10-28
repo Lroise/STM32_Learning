@@ -1,139 +1,41 @@
 /* USER CODE BEGIN Header */
-/**
-  ******************************************************************************
-  * @file           : main.c
-  * @brief          : Main program body
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2026 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
-/* USER CODE END Header */
-/* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "i2c.h"
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
 
-/* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "app_button.h"
-#include "app_pwm.h"
-#include "app_encoder.h"
-#include "encoder_test.h"
-#include "mpu6050_test.h"     // MPU6050 测试
-#include "app_motor.h"        // 电机速度环 PID（新增）
-#include <stdarg.h>
-#include <string.h>
-#include <stdio.h>
+#include "app_button.h"       
+#include "app_pwm.h"          
+#include "app_encoder.h"      
+#include "app_motor.h"        
+#include "app_mpu6050.h"      
+#include "app_control.h"      
+#include "app_oled.h"         
+#include "task.h"
+#include <stdio.h>            
 /* USER CODE END Includes */
 
-/* Private typedef -----------------------------------------------------------*/
-/* USER CODE BEGIN PTD */
-/* USER CODE END PTD */
-
-/* Private define ------------------------------------------------------------*/
-/* USER CODE BEGIN PD */
-/* TB6612 电机方向引脚，与手写接线保持一致 */
-#define AIN1_PIN  GPIO_PIN_5
-#define AIN1_PORT GPIOA
-#define AIN2_PIN  GPIO_PIN_4
-#define AIN2_PORT GPIOA
-#define BIN1_PIN  GPIO_PIN_15
-#define BIN1_PORT GPIOB
-#define BIN2_PIN  GPIO_PIN_14
-#define BIN2_PORT GPIOB
-
-/* 编码器一圈总脉冲数 = 线数 × 减速比 × 4（四倍频）
- * ENCODER_PPR：编码器线数
- * GEAR_RATIO ：减速比
- */
-#define ENCODER_PPR   11
-#define GEAR_RATIO    30
-#define PULSE_PER_REV (ENCODER_PPR * GEAR_RATIO * 4)
-/* USER CODE END PD */
-
-/* Private macro -------------------------------------------------------------*/
-/* USER CODE BEGIN PM */
-/* USER CODE END PM */
-
-/* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
-float targetOmega = 0.0f;   // 目标速度（新增）
+extern uint8_t motor_run_flag; 
+float targetOmega = 0.0f;      
 /* USER CODE END PV */
 
-/* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
-/* USER CODE BEGIN PFP */
-void My_USART_Printf(UART_HandleTypeDef *huart, const char *fmt, ...);
-/* USER CODE END PFP */
 
-/* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
-/**
-  * @brief  简易串口打印函数，支持可变参数
-  * @param  huart: 串口句柄
-  * @param  fmt:   格式化字符串
-  * @note   把格式化后的字符串发到串口，供 VOFA+ 显示
-  */
-void My_USART_Printf(UART_HandleTypeDef *huart, const char *fmt, ...)
-{
-  uint8_t buf[128];
-  va_list ap;
-  va_start(ap, fmt);
-  int len = vsnprintf((char*)buf, sizeof(buf), fmt, ap);   // 安全版，限制长度
-  va_end(ap);
-  if(len > 0)
-  {
-    HAL_UART_Transmit(huart, buf, (uint16_t)len, 100);      // 超时改成 100ms
-  }
-}
-
-/**
-  * @brief  TIM4 定时中断回调，10ms 触发一次
-  * @param  htim: 定时器句柄
-  * @note   只翻转 LED，指示中断在跑
-  */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-  if(htim->Instance == TIM4)
-  {
-    HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);      // 翻转 LED，指示中断运行
-  }
+  if(htim->Instance == TIM4) HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13); 
 }
 /* USER CODE END 0 */
 
-/**
-  * @brief  The application entry point.
-  * @retval int
-  */
 int main(void)
 {
-  /* USER CODE BEGIN 1 */
-  /* USER CODE END 1 */
-
-  /* MCU Configuration--------------------------------------------------------*/
   HAL_Init();
-
-  /* USER CODE BEGIN Init */
-  /* USER CODE END Init */
-
-  /* Configure the system clock */
   SystemClock_Config();
-
-  /* USER CODE BEGIN SysInit */
-  /* USER CODE END SysInit */
-
-  /* Initialize all configured peripherals */
+  
   MX_GPIO_Init();
   MX_TIM3_Init();
   MX_TIM1_Init();
@@ -141,51 +43,59 @@ int main(void)
   MX_USART2_UART_Init();
   MX_TIM2_Init();
   MX_I2C2_Init();
-
-  /* USER CODE BEGIN 2 */
-  App_Button_Init();                            // 按键初始化
-  App_PWM_Init();                               // PWM 初始化（电机驱动）
-  // TB6612_Enable(1);                          // 【改动 1】：注释掉！总开关交给按键的 App_Motor_Cmd 去开
-  HAL_TIM_Base_Start_IT(&htim4);                // 启动 TIM4 10ms 中断
   
-  App_Encoder_Init();                           // 启动编码器（新增）
-  App_Motor_Init();                             // 初始化电机速度环 PID（新增）
-
-  // Encoder_M_Method_Test();                   // 测速 + 按键 + 电机 + MPU6050（先注释掉）
-  // MPU6050_EularAngleTest();                  // 按键 + 电机 + MPU6050（先注释掉）
+  /* USER CODE BEGIN 2 */
+  App_PWM_Init();
+  App_Encoder_Init();
+  App_MPU6050_Init();
+  App_Motor_Init();
+  App_Button_Init();
+  App_Control_Init();
+  
+  App_OLED_Init();
+  HAL_TIM_Base_Start_IT(&htim4);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    /* USER CODE END WHILE */
-
     /* USER CODE BEGIN 3 */
-    // 【改动 2】：加上按键扫描，按下按键才会触发 Key1_Click 开启电机
-    App_Button_Proc();   
-
-    // ======================= 铁头山羊的速度环测试代码（已停用） =======================
-    // 【改动 3】：把自动生成目标速度的代码注释掉，避免上电自动起飞。
-    // targetOmega = (HAL_GetTick() / 1000) % 10 * 2.0f;
-    // App_Motor_SetOmega_L(targetOmega);
-    // App_Motor_SetOmega_R(targetOmega);
-    // ================================================================================
-
-    // 执行速度环 PID 计算（不管转不转，PID 在后台一直算着，等按键一开就立刻生效）
-    App_Motor_Proc();
-
-    // 每 10ms 打印一次数据，供 VOFA+ 观察
-    static uint32_t print_tick = 0;
-    if (HAL_GetTick() - print_tick >= 10)
-    {
-        print_tick = HAL_GetTick();
-        float omega_l = App_Encoder_GetSpeed_L();   // 读左轮实际速度
-        float omega_r = App_Encoder_GetSpeed_R();   // 读右轮实际速度
-        My_USART_Printf(&huart2, "%.3f,%.3f,%.3f\r\n", targetOmega, omega_l, omega_r);
-    }
-    /* USER CODE END 3 */
+      
+      // =====================================================================
+      // 【防炸核心：严格锁定 5ms 控制周期】
+      // 绝对不允许空转狂算 PID，必须和 MPU6050 的 5ms 采样同步！
+      // =====================================================================
+      static uint32_t last_ctrl = 0;
+      if (HAL_GetTick() - last_ctrl >= 5) 
+      {
+          last_ctrl = HAL_GetTick();
+          
+          App_MPU6050_Proc(); 
+          App_Button_Proc();
+          App_Control_Proc();
+      }
+      
+      // =====================================================================
+      // 屏幕刷新：每 100ms 刷新一次，避免频繁刷屏导致 CPU 卡顿
+      // =====================================================================
+      static uint32_t last_oled = 0;
+      if (HAL_GetTick() - last_oled >= 100) 
+      {
+          last_oled = HAL_GetTick();
+          char buf[16];
+          
+          sprintf(buf, "P: %+.1f   ", App_MPU6050_GetPitch());
+          App_OLED_ShowString(0, 0, buf); 
+          
+          sprintf(buf, "Gx: %+.1f   ", App_MPU6050_GetGx());
+          App_OLED_ShowString(0, 2, buf); 
+          
+          sprintf(buf, "Run: %d    ", motor_run_flag);
+          App_OLED_ShowString(0, 4, buf); 
+      }
   }
+  /* USER CODE END 3 */
 }
 
 /**
@@ -196,7 +106,6 @@ void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
-
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
@@ -204,22 +113,14 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9;
-  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
+  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) { Error_Handler(); }
+  
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK|RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
-
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
-  {
-    Error_Handler();
-  }
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK) { Error_Handler(); }
 }
 
 /* USER CODE BEGIN 4 */
@@ -238,18 +139,3 @@ void Error_Handler(void)
   }
   /* USER CODE END Error_Handler_Debug */
 }
-
-#ifdef  USE_FULL_ASSERT
-/**
-  * @brief  Reports the name of the source file and the source line number
-  *         where the assert_param error has occurred.
-  * @param  file: pointer to the source file name
-  * @param  line: assert_param error line source number
-  * @retval None
-  */
-void assert_failed(uint8_t *file, uint32_t line)
-{
-  /* USER CODE BEGIN 6 */
-  /* USER CODE END 6 */
-}
-#endif /* USE_FULL_ASSERT */

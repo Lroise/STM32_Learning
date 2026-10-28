@@ -314,7 +314,7 @@
           </ArmAdsMisc>
           <Cads>
             <interw>1</interw>
-            <Optim>1</Optim>
+            <Optim>2</Optim>
             <oTime>0</oTime>
             <SplitLS>0</SplitLS>
             <OneElfS>1</OneElfS>
@@ -430,24 +430,9 @@
               <FilePath>..\Core\Inc\usart.h</FilePath>
             </File>
             <File>
-              <FileName>encoder_Test.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Core\Src\encoder_Test.c</FilePath>
-            </File>
-            <File>
-              <FileName>encoder_Test.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\Core\Inc\encoder_Test.h</FilePath>
-            </File>
-            <File>
               <FileName>app_mpu6050.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\Core\Inc\app_mpu6050.h</FilePath>
-            </File>
-            <File>
-              <FileName>mpu6050_Test.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\Core\Inc\mpu6050_Test.h</FilePath>
             </File>
             <File>
               <FileName>app_mpu6050.c</FileName>
@@ -455,9 +440,39 @@
               <FilePath>..\Core\Src\app_mpu6050.c</FilePath>
             </File>
             <File>
-              <FileName>mpu6050_Test.c</FileName>
+              <FileName>task.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Core\Inc\task.h</FilePath>
+            </File>
+            <File>
+              <FileName>pid.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Core\Inc\pid.h</FilePath>
+            </File>
+            <File>
+              <FileName>app_motor.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Core\Inc\app_motor.h</FilePath>
+            </File>
+            <File>
+              <FileName>app_motor.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Core\Src\mpu6050_Test.c</FilePath>
+              <FilePath>..\Core\Src\app_motor.c</FilePath>
+            </File>
+            <File>
+              <FileName>pid.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\pid.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_control.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\app_control.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_control.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Core\Inc\app_control.h</FilePath>
             </File>
             <File>
               <FileName>main.c</FileName>
@@ -648,9 +663,14 @@
               <FilePath>../Core/Src/stm32f1xx_hal_msp.c</FilePath>
             </File>
             <File>
-              <FileName>task.h</FileName>
+              <FileName>app_oled.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\Core\Inc\task.h</FilePath>
+              <FilePath>..\Core\Inc\app_oled.h</FilePath>
+            </File>
+            <File>
+              <FileName>app_oled.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\app_oled.c</FilePath>
             </File>
           </Files>
         </Group>

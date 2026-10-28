@@ -24,5 +24,6 @@ balance_car/main.o: ..\Core\Src\main.c ..\Core\Inc\main.h \
   ..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_uart.h \
   ..\Core\Inc\i2c.h ..\Core\Inc\tim.h ..\Core\Inc\usart.h \
   ..\Core\Inc\gpio.h ..\Core\Inc\app_button.h ..\Core\Inc\app_pwm.h \
-  ..\Core\Inc\app_encoder.h ..\Core\Inc\encoder_test.h \
-  ..\Core\Inc\mpu6050_test.h
+  ..\Core\Inc\app_encoder.h ..\Core\Inc\app_motor.h \
+  ..\Core\Inc\app_mpu6050.h ..\Core\Inc\app_control.h \
+  ..\Core\Inc\app_oled.h ..\Core\Inc\task.h

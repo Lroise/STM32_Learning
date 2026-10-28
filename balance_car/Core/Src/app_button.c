@@ -1,105 +1,81 @@
 #include"app_button.h"
 #include"app_pwm.h"
-#include"app_motor.h"    // 包含电机控制头文件
+#include"app_motor.h"
 
-// 声明 main.c 里的全局目标速度变量（新增）
+// 引入主程序里的目标速度（虽然这里没直接用到，但为了链接不报错保留）
 extern float targetOmega; 
 
-//=====按键配置区，在这改引脚=====
+//=====按键配置区=====
 #define KEY1_PORT GPIOB
 #define KEY1_PIN GPIO_PIN_1
+//====================
 
-#define KEY2_PORT GPIOB
-#define KEY2_PIN GPIO_PIN_12
-//================================
-//按键 1 变量
-uint8_t key1_last = 1;            //上一次读到的按键电平，按键松开是高电平1
-uint32_t key1_cnt = 0;            //消抖计数器
-uint8_t key1_press_flag = 0;      //标记：是否确认按键已经按下 0=没按下， 1=按下
+// 按键状态变量
+uint8_t key1_last = 1;            // 记录上一次的电平（松开为高电平 1）
+uint32_t key1_cnt = 0;            // 消抖计数器
+uint8_t key1_press_flag = 0;      // 标记：是否确认按键已经按下 0=没按下，1=按下
 
-//按键 2 变量
-uint8_t key2_last = 1;
-uint32_t key2_cnt = 0;
-uint8_t key2_press_flag = 0;
+uint8_t motor_run_flag = 0;       // 电机运行标志位（0关，1开）
 
-uint8_t motor_run_flag = 0;
-//=================================
-//按键1单击回调，static代表这个函数只允许本文件内部可调用，外部看不见
+/**
+  * @brief  按键 1 单击回调函数
+  * @note   每按一次，电机状态翻转一次（开->关，关->开）
+  */
 static void Key1_Click(void)
 {
-    motor_run_flag = !motor_run_flag;      //取反翻转，0变1，1变0，点一次启动，再点一次停止
-    HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+    motor_run_flag = !motor_run_flag;      // 状态翻转
+    HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13); // 翻转 LED 指示
     
     if (motor_run_flag == 1)
     {
-        // ================= 新增：设定目标速度 =================
-        // 你之前没给目标速度，所以它不知道要跑多快！
-        targetOmega = 10.0f;  // 设定速度为 10.0 弧度/秒
-        
-        App_Motor_SetOmega_L(targetOmega);  // 告诉左轮目标速度
-        App_Motor_SetOmega_R(targetOmega);  // 告诉右轮目标速度
-        
-        // 调用带 PID 复位的电机开关函数，开启总闸
-        App_Motor_Cmd(1);  
+        // 开启电机总闸（底层使能）
+        App_Motor_Cmd(1);   
     }
     else
     {
-        // 关闭电机
-        App_Motor_Cmd(0);  
-        
-        // ================= 新增：停车时目标速度清零 =================
-        targetOmega = 0.0f;
+        // 关闭电机总闸
+        App_Motor_Cmd(0);   
+        targetOmega = 0.0f; // 清空目标速度
     }
 }
-static void Key2_Click(void)
-{
-	//预留，后面平衡车功能写这里
-}
+
 void App_Button_Init(void)
 {
-	//GPIO引脚初始化已经CubMX在gpio.c里面做完，这里空函数
+    // CubeMX 已经在 gpio.c 里初始化了引脚，这里留空
 }
+
+/**
+  * @brief  按键扫描函数（必须放在 while(1) 中不断调用）
+  * @note   带消抖逻辑，防止按一下触发多次
+  */
 void App_Button_Proc(void)
 {
-	//------------按键1 PB1扫描--------------
-	uint8_t key1_now = HAL_GPIO_ReadPin(KEY1_PORT, KEY1_PIN);
-	if(key1_now != key1_last)
-	{
-		key1_cnt = 2;              // 消抖计数改成 2，按一下就能触发
-		key1_last = key1_now;
-	}
-	if(key1_cnt>0)key1_cnt--;
-	if(key1_cnt == 0)
-	{
-		if(key1_now == 0 && key1_press_flag == 0)
-		{
-			key1_press_flag = 1;
-		}
-		if(key1_now == 1 && key1_press_flag == 1)
-		{
-			key1_press_flag = 0;
-			Key1_Click();
-		}
-	}
-
-	//------------按键2 PB12扫描--------------
-	uint8_t key2_now = HAL_GPIO_ReadPin(KEY2_PORT, KEY2_PIN);
-	if(key2_now != key2_last)
-	{
-		key2_cnt = 2;              // 消抖计数改成 2
-		key2_last = key2_now;
-	}
-	if(key2_cnt>0)key2_cnt--;
-	if(key2_cnt == 0)
-	{
-		if(key2_now == 0 && key2_press_flag == 0)
-		{
-			key2_press_flag = 1;
-		}
-		if(key2_now == 1 && key2_press_flag == 1)
-		{
-			key2_press_flag = 0;
-			Key2_Click();
-		}
-	}
+    // 读取当前按键电平
+    uint8_t key1_now = HAL_GPIO_ReadPin(KEY1_PORT, KEY1_PIN);
+    
+    // 如果电平发生变化（比如按下变0，或松开变1）
+    if(key1_now != key1_last)
+    {
+        key1_cnt = 2;              // 重置消抖计数器（给几次轮询的时间稳定）
+        key1_last = key1_now;      // 更新记录的上一次电平
+    }
+    
+    if(key1_cnt > 0) key1_cnt--;   // 每次调用递减，减到 0 说明电平稳定了
+    
+    // 如果计数器归零，且电平确实稳定了
+    if(key1_cnt == 0)
+    {
+        // 1. 捕捉按下动作
+        if(key1_now == 0 && key1_press_flag == 0)
+        {
+            key1_press_flag = 1;   // 标记为已按下
+        }
+        
+        // 2. 捕捉松开动作（此时说明完成了一次完整的点击）
+        if(key1_now == 1 && key1_press_flag == 1)
+        {
+            key1_press_flag = 0;   // 清除按下标记
+            Key1_Click();          // 触发单击回调
+        }
+    }
 }

@@ -23,4 +23,4 @@ balance_car/app_button.o: ..\Core\Src\app_button.c \
   ..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_tim.h \
   ..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_tim_ex.h \
   ..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_uart.h \
-  ..\Core\Inc\app_pwm.h ..\Core\Inc\main.h
+  ..\Core\Inc\app_pwm.h ..\Core\Inc\main.h ..\Core\Inc\app_motor.h
