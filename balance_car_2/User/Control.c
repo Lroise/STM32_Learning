@@ -27,13 +27,13 @@ int16_t Target_Speed = 0;
 int16_t Turn_Speed = 0;                 
 
 // 【核心参数】（直立环，保持原样没动）
-float Med_Angle   = -1.0;   
-float Vertical_Kp = 300.0;   
+float Med_Angle   = -4.0;   
+float Vertical_Kp = 250.0;   
 float Vertical_Kd = -0.6;    
 
 // 【速度环参数】（保持原样没动）
-float Velocity_Kp = 40.0;    
-float Velocity_Ki = 2.0;     
+float Velocity_Kp = 150.0;    
+float Velocity_Ki = 2.5;     
 
 // 【转向环参数】（新增：开启转向）
 float Turn_Kp     = 15.0;    // 转向比例
