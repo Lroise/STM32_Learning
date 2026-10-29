@@ -44,6 +44,12 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
         g_usart_rx_buf[0] = buffer[0]; // 只取最新单字节
         
         // 【修改说明】删除了 HAL_UART_Transmit 和 while 等待 TC 标志，防止阻塞中断导致死机！
+        /* 
+         * === 面试解析 ===
+         * 这一步极其关键！很多新手会在串口接收中断里用 printf 打印收到的字符。
+         * 这会导致极严重的阻塞，导致平衡车主循环卡死直接摔倒。
+         * 面试时可以说：我知道中断服务函数（ISR）必须尽量短小快，所以我只做标志位判断，绝不在这里做打印或延时。
+         */
         
         if (g_usart_rx_buf[0] == '1') { 
             Fore=0; Back=0; Left=0; Right=0; 
@@ -71,5 +77,12 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
         
         // 重新开启接收中断，等待下一个字节
         HAL_UART_Receive_IT(&huart1, (uint8_t *)buffer, 1);
+        
+        /* 
+         * === 面试解析 ===
+         * 为什么这行代码必须写在最后面？
+         * 因为 HAL 库的接收中断是“单次”的。进了一次回调，接收就关闭了。
+         * 必须在这个函数退出前，重新调用它把接收打开，否则小车就只能响应一次遥控指令。
+         */
     }
 }

@@ -51,6 +51,10 @@ void MPU_IIC_Init(void)
         MPU_IIC_Delay();
         MPU_IIC_SCL_H();
         MPU_IIC_Delay();
+        /* === 面试解析 ===
+         * 经典的工程防呆操作。如果单片机意外复位而传感器还在拉低 SDA，总线会死锁。
+         * 强行发 9 个脉冲，让从机把最后一个字节（8位数据+1位ACK）发完，释放总线。
+         */
     }
 }
 

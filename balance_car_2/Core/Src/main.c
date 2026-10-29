@@ -57,6 +57,11 @@ int main(void)
   Buzzer_Init(); 
 
   HAL_NVIC_DisableIRQ(EXTI9_5_IRQn); 
+  /* === 面试解析 ===
+   * 为什么这里要禁用外部中断？
+   * 因为接下来要初始化 MPU6050 的 DMP 固件，需要极速且纯净的软件 I2C 时序。
+   * 如果不关闭，此时超声波或串口中断打断时序，会导致 DMP 初始化直接失败。
+   */
 
   OLED_ShowString(1, 3, (uint8_t *)"Start DMP...  ", 16);
   uint8_t mpu_err = mpu_dmp_init(); 
@@ -70,6 +75,9 @@ int main(void)
       OLED_ShowString(1, 3, (uint8_t *)"DMP ERR: ", 16);
       OLED_ShowNum(75, 3, mpu_err, 2, 16); 
       while(1); 
+      /* === 面试解析 ===
+       * 死循环保护。如果 MPU6050 损坏或接线松动，程序死在这里，防止小车乱跑伤人。
+       */
   }
   
   HAL_Delay(1000);
@@ -116,6 +124,12 @@ int main(void)
       }
       
       HAL_Delay(2); 
+      /* === 面试解析 ===
+       * 这个 while(1) 架构非常优秀。采用了“时间片轮询”的思想：
+       * 控制环（Control_Loop）是最高优先级，每次必执行。
+       * 屏幕和超声波是耗时大户，利用计数器进行降频（分频）执行，确保不会拖慢控制环。
+       * 最后的 HAL_Delay(2) 既给了 CPU 喘息的空闲，又固定了系统的基础节拍（500Hz）。
+       */
       
       /* USER CODE END 3 */
   }

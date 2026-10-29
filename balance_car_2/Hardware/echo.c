@@ -48,12 +48,18 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
             echo_sta = 0X40;           
             __HAL_TIM_SET_COUNTER(&htim1, 0);   						
             __HAL_TIM_SET_CAPTUREPOLARITY(&htim1, TIM_CHANNEL_1, TIM_ICPOLARITY_FALLING);
+            /* === 面试解析 === 
+             * 捕获到上升沿，说明高电平开始，把定时器清零准备计时，同时把捕获极性改为下降沿。
+             */
         }
         else if (echo_sta & 0X40 && !(echo_sta & 0X80)) 
         {
             echo_dval = HAL_TIM_ReadCapturedValue(&htim1, TIM_CHANNEL_1);  
             echo_sta |= 0X80;        															
             __HAL_TIM_SET_CAPTUREPOLARITY(&htim1, TIM_CHANNEL_1, TIM_ICPOLARITY_RISING);
+            /* === 面试解析 ===
+             * 捕获到下降沿，高电平结束，读取计数值（这就是高电平脉宽），并把极性改回上升沿，准备下一次。
+             */
         }
     }
 }
@@ -72,6 +78,11 @@ void echo_value_get(void)
     {
         timeout++;
         delay_us(1);
+        /* === 面试解析（你的优化亮点）===
+         * 这里是阻塞等待。如果超声波丢波，会卡住约 30ms。
+         * 面试老师问起来，你可以说：这段代码目前用了降频缓解，如果让我优化，
+         * 我会把这里改成完全非阻塞，通过外部中断或定时器捕获直接给全局变量赋值。
+         */
     }
     
     if(echo_sta&0X80 && echo_dval > 0)

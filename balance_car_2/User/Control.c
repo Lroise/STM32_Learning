@@ -59,6 +59,11 @@ void Control_Loop(void)
         return;     
     }
 
+    /* === 面试解析 ===
+     * 安全机制：倒立摆如果倾角过大，电机再转也无法挽回。
+     * 这里直接 return 并让电机停转，防止车子摔了之后轮子狂转烧毁驱动板。
+     */
+
     // =========================================================================
     // 【新功能 1：自动刹车避障】
     // =========================================================================
@@ -108,6 +113,11 @@ int16_t Vertical(float Med_Angle,float Angle,float Gyro_X)
     int16_t PWM_Out;
     PWM_Out = Vertical_Kp * (Angle-Med_Angle) - Vertical_Kd * Gyro_X;
     return PWM_Out;
+    /* === 面试解析 ===
+     * 为什么直立环没有 I（积分）？
+     * 因为积分会累积历史误差。如果车倒了，积分会累积极大数值，再扶起来时会猛冲。
+     * P（比例）提供像弹簧一样的回正力；D（微分）利用角速度提供阻尼，防止在平衡点来回震荡。
+     */
 }
 
 int16_t Velocity(int16_t Target_Speed,int16_t Encoder_left,int16_t Encoder_right)
@@ -130,6 +140,11 @@ int16_t Velocity(int16_t Target_Speed,int16_t Encoder_left,int16_t Encoder_right
     if (Pwm_Out < -4000) Pwm_Out = -4000;
     
     return Pwm_Out;
+    /* === 面试解析 ===
+     * 速度环用的是 PI 控制。为什么不用 D？因为编码器数据本身带有毛刺抖动，D 会放大噪声。
+     * 一阶低通滤波 (a=0.5) 是为了让速度数据平滑。
+     * 积分限幅 (10000) 是为了防止“积分饱和”。如果车被卡住，误差一直存在，I 会无限变大，限制它防止失控。
+     */
 }
 
 int16_t Turn(int16_t RC,int16_t gyro_Z)
@@ -138,4 +153,8 @@ int16_t Turn(int16_t RC,int16_t gyro_Z)
     // 【修改】转向公式：P * 目标转向速度 + D * 实际Z轴旋转速度
     PWM_out = Turn_Kp * RC + Turn_Kd * gyro_Z;
     return PWM_out;
+    /* === 面试解析 ===
+     * 这里的 RC 是蓝牙遥控给的目标转向值，gyro_Z 是车体实际旋转的角速度。
+     * D 项在这里起到了“车身稳定”的作用，防止转向过冲。
+     */
 }
